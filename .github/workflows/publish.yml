@@ -1,26 +1,24 @@
-name: Publish npm package
+name: Publish
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to publish (e.g. 3.3.0-grid.1)'
-        required: true
-        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-  build-and-publish:
+  publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: 22.x
+          registry-url: https://registry.npmjs.org/
 
       - name: Install root dependencies
         run: npm install
@@ -29,31 +27,37 @@ jobs:
         working-directory: javascript
         run: npm install
 
-      - name: Build WASM
+      - name: Build & test
         working-directory: javascript
-        run: npx just build
-
-      - name: Run tests
-        working-directory: javascript
-        run: npx just test
+        run: |
+          npx just build
+          npx just test
 
       - name: Prepack
         working-directory: javascript
         run: npx just prepack
 
-      - name: Set package name and version
+      - name: Set package identity
         working-directory: javascript
         run: |
+          VERSION="${GITHUB_REF_NAME#v}"
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
             pkg.name = '@open-pencil/yoga-layout';
-            pkg.version = '${{ inputs.version }}';
+            pkg.version = '${VERSION}';
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
           "
+          echo "Publishing @open-pencil/yoga-layout@${VERSION}"
 
-      - name: Publish
+      - name: Publish to npm
         working-directory: javascript
-        run: npm publish --access public --ignore-scripts --tag grid --provenance
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TAG="latest"
+          if echo "$VERSION" | grep -q "-"; then
+            TAG="grid"
+          fi
+          npm publish --access public --provenance --ignore-scripts --tag "$TAG"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
