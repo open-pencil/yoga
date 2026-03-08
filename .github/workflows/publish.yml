@@ -1,0 +1,59 @@
+name: Publish npm package
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 3.3.0-grid.1)'
+        required: true
+        type: string
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install root dependencies
+        run: npm install
+
+      - name: Install JS dependencies
+        working-directory: javascript
+        run: npm install
+
+      - name: Build WASM
+        working-directory: javascript
+        run: npx just build
+
+      - name: Run tests
+        working-directory: javascript
+        run: npx just test
+
+      - name: Prepack
+        working-directory: javascript
+        run: npx just prepack
+
+      - name: Set package name and version
+        working-directory: javascript
+        run: |
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.name = '@open-pencil/yoga-layout';
+            pkg.version = '${{ inputs.version }}';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Publish
+        working-directory: javascript
+        run: npm publish --access public --ignore-scripts --tag grid --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
