@@ -12,6 +12,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: npm
     steps:
       - uses: actions/checkout@v4
 
@@ -20,12 +21,10 @@ jobs:
           node-version: 22.x
           registry-url: https://registry.npmjs.org/
 
-      - name: Install root dependencies
-        run: npm install
-
-      - name: Install JS dependencies
-        working-directory: javascript
-        run: npm install
+      - name: Install dependencies
+        run: |
+          npm install
+          cd javascript && npm install
 
       - name: Build & test
         working-directory: javascript
