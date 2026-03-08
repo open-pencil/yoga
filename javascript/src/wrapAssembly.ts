@@ -20,6 +20,7 @@ import type {
   Errata,
   ExperimentalFeature,
   FlexDirection,
+  GridTrackType,
   Gutter,
   Justify,
   MeasureMode,
@@ -45,6 +46,13 @@ type Size = {
 type Value = {
   unit: Unit;
   value: number;
+};
+
+type GridTrackValue = {
+  type: GridTrackType;
+  value?: number;
+  min?: GridTrackValue;
+  max?: GridTrackValue;
 };
 
 export type Config = {
@@ -167,6 +175,8 @@ export type Node = {
   setHeightPercent(height: number | undefined): void;
   setHeightStretch(): void;
   setJustifyContent(justifyContent: Justify): void;
+  setJustifyItems(justifyItems: Justify): void;
+  setJustifySelf(justifySelf: Justify): void;
   setGap(gutter: Gutter, gapLength: number | `${number}%` | undefined): Value;
   setGapPercent(gutter: Gutter, gapLength: number | undefined): Value;
   setMargin(
@@ -255,6 +265,26 @@ export type Node = {
   unsetDirtiedFunc(): void;
   unsetMeasureFunc(): void;
   setAlwaysFormsContainingBlock(alwaysFormsContainingBlock: boolean): void;
+  setGridTemplateColumns(tracks: GridTrackValue[]): void;
+  setGridTemplateRows(tracks: GridTrackValue[]): void;
+  setGridAutoColumns(tracks: GridTrackValue[]): void;
+  setGridAutoRows(tracks: GridTrackValue[]): void;
+  setGridColumnStart(value: number): void;
+  setGridColumnStartAuto(): void;
+  setGridColumnStartSpan(span: number): void;
+  getGridColumnStart(): number;
+  setGridColumnEnd(value: number): void;
+  setGridColumnEndAuto(): void;
+  setGridColumnEndSpan(span: number): void;
+  getGridColumnEnd(): number;
+  setGridRowStart(value: number): void;
+  setGridRowStartAuto(): void;
+  setGridRowStartSpan(span: number): void;
+  getGridRowStart(): number;
+  setGridRowEnd(value: number): void;
+  setGridRowEndAuto(): void;
+  setGridRowEndSpan(span: number): void;
+  getGridRowEnd(): number;
 };
 
 export type Yoga = {
@@ -514,6 +544,14 @@ export default function wrapAssembly(lib: any): Yoga {
       lib._YGNodeStyleSetJustifyContent(this._ptr, justifyContent);
     }
 
+    setJustifyItems(justifyItems: Justify): void {
+      lib._YGNodeStyleSetJustifyItems(this._ptr, justifyItems);
+    }
+
+    setJustifySelf(justifySelf: Justify): void {
+      lib._YGNodeStyleSetJustifySelf(this._ptr, justifySelf);
+    }
+
     setDirection(direction: Direction): void {
       lib._YGNodeStyleSetDirection(this._ptr, direction);
     }
@@ -760,6 +798,144 @@ export default function wrapAssembly(lib: any): Yoga {
         this._ptr,
         alwaysFormsContainingBlock ? 1 : 0,
       );
+    }
+
+    // --- Grid ---
+
+    _setGridTracks(
+      setCountFn: (ptr: number, count: number) => void,
+      setTrackFn: (
+        ptr: number,
+        index: number,
+        type: number,
+        value: number,
+      ) => void,
+      setMinMaxFn: (
+        ptr: number,
+        index: number,
+        minType: number,
+        minValue: number,
+        maxType: number,
+        maxValue: number,
+      ) => void,
+      tracks: GridTrackValue[],
+    ): void {
+      setCountFn(this._ptr, tracks.length);
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
+        if (track.min != null && track.max != null) {
+          setMinMaxFn(
+            this._ptr,
+            i,
+            track.min.type,
+            track.min.value ?? 0,
+            track.max.type,
+            track.max.value ?? 0,
+          );
+        } else {
+          setTrackFn(this._ptr, i, track.type, track.value ?? 0);
+        }
+      }
+    }
+
+    setGridTemplateColumns(tracks: GridTrackValue[]): void {
+      this._setGridTracks(
+        lib._YGNodeStyleSetGridTemplateColumnsCount,
+        lib._YGNodeStyleSetGridTemplateColumn,
+        lib._YGNodeStyleSetGridTemplateColumnMinMax,
+        tracks,
+      );
+    }
+
+    setGridTemplateRows(tracks: GridTrackValue[]): void {
+      this._setGridTracks(
+        lib._YGNodeStyleSetGridTemplateRowsCount,
+        lib._YGNodeStyleSetGridTemplateRow,
+        lib._YGNodeStyleSetGridTemplateRowMinMax,
+        tracks,
+      );
+    }
+
+    setGridAutoColumns(tracks: GridTrackValue[]): void {
+      this._setGridTracks(
+        lib._YGNodeStyleSetGridAutoColumnsCount,
+        lib._YGNodeStyleSetGridAutoColumn,
+        lib._YGNodeStyleSetGridAutoColumnMinMax,
+        tracks,
+      );
+    }
+
+    setGridAutoRows(tracks: GridTrackValue[]): void {
+      this._setGridTracks(
+        lib._YGNodeStyleSetGridAutoRowsCount,
+        lib._YGNodeStyleSetGridAutoRow,
+        lib._YGNodeStyleSetGridAutoRowMinMax,
+        tracks,
+      );
+    }
+
+    setGridColumnStart(value: number): void {
+      lib._YGNodeStyleSetGridColumnStart(this._ptr, value);
+    }
+
+    setGridColumnStartAuto(): void {
+      lib._YGNodeStyleSetGridColumnStartAuto(this._ptr);
+    }
+
+    setGridColumnStartSpan(span: number): void {
+      lib._YGNodeStyleSetGridColumnStartSpan(this._ptr, span);
+    }
+
+    getGridColumnStart(): number {
+      return lib._YGNodeStyleGetGridColumnStart(this._ptr);
+    }
+
+    setGridColumnEnd(value: number): void {
+      lib._YGNodeStyleSetGridColumnEnd(this._ptr, value);
+    }
+
+    setGridColumnEndAuto(): void {
+      lib._YGNodeStyleSetGridColumnEndAuto(this._ptr);
+    }
+
+    setGridColumnEndSpan(span: number): void {
+      lib._YGNodeStyleSetGridColumnEndSpan(this._ptr, span);
+    }
+
+    getGridColumnEnd(): number {
+      return lib._YGNodeStyleGetGridColumnEnd(this._ptr);
+    }
+
+    setGridRowStart(value: number): void {
+      lib._YGNodeStyleSetGridRowStart(this._ptr, value);
+    }
+
+    setGridRowStartAuto(): void {
+      lib._YGNodeStyleSetGridRowStartAuto(this._ptr);
+    }
+
+    setGridRowStartSpan(span: number): void {
+      lib._YGNodeStyleSetGridRowStartSpan(this._ptr, span);
+    }
+
+    getGridRowStart(): number {
+      return lib._YGNodeStyleGetGridRowStart(this._ptr);
+    }
+
+    setGridRowEnd(value: number): void {
+      lib._YGNodeStyleSetGridRowEnd(this._ptr, value);
+    }
+
+    setGridRowEndAuto(): void {
+      lib._YGNodeStyleSetGridRowEndAuto(this._ptr);
+    }
+
+    setGridRowEndSpan(span: number): void {
+      lib._YGNodeStyleSetGridRowEndSpan(this._ptr, span);
+    }
+
+    getGridRowEnd(): number {
+      return lib._YGNodeStyleGetGridRowEnd(this._ptr);
     }
 
     // --- Style getters ---
