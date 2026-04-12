@@ -130,6 +130,8 @@ export type Node = {
   hasNewLayout(): boolean;
   markLayoutSeen(): void;
   removeChild(child: Node): void;
+  free(): void;
+  freeRecursive(): void;
   reset(): void;
   setAlignContent(alignContent: Align): void;
   setAlignItems(alignItems: Align): void;
@@ -488,6 +490,20 @@ export default function wrapAssembly(lib: any): Yoga {
     }
 
     // --- Lifecycle ---
+    free(): void {
+      nodeRegistry.unregister(this);
+      lib._yogaMeasureFuncs.delete(this._ptr);
+      lib._yogaDirtiedFuncs.delete(this._ptr);
+      lib._YGNodeFinalize(this._ptr);
+    }
+
+    freeRecursive(): void {
+      for (let i = this._children.length - 1; i >= 0; i--) {
+        this._children[i].freeRecursive();
+      }
+      this.free();
+    }
+
     reset(): void {
       lib._yogaMeasureFuncs.delete(this._ptr);
       lib._yogaDirtiedFuncs.delete(this._ptr);
