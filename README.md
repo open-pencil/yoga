@@ -2,6 +2,8 @@
 
 Yoga is an embeddable and performant flexbox layout engine with bindings for multiple languages.
 
+This fork is maintained for [OpenPencil](https://github.com/open-pencil/open-pencil) and carries CSS Grid/layout work used by the editor's auto-layout engine.
+
 ## Building
 
 Yoga's main implementation targets C++ 20 with accompanying build logic in CMake. A wrapper is provided to build the main library and run unit tests.
@@ -33,3 +35,7 @@ To generate new tests from added fixtures:
 ## Debugging
 
 Yoga provides a VSCode "launch.json" configuration which allows debugging unit tests. Simply add your breakpoints, and run "Debug C++ Unit tests (lldb)" (or "Debug C++ Unit tests (vsdbg)" on Windows).
+
+---
+
+Maintained as part of [OpenPencil](https://github.com/open-pencil) for the [OpenPencil editor](https://github.com/open-pencil/open-pencil).
